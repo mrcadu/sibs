@@ -5,6 +5,8 @@ import aubay.sibs.model.Order;
 import aubay.sibs.model.StockMovement;
 import aubay.sibs.repository.OrderRepository;
 import aubay.sibs.repository.StockMovementRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -19,6 +21,7 @@ public class StockMovementService {
 
     private final OrderService orderService;
 
+    private final Logger logger = LogManager.getLogger(StockMovementService.class);
     public StockMovementService(StockMovementRepository stockMovementRepository, OrderRepository orderRepository, OrderService orderService) {
         this.stockMovementRepository = stockMovementRepository;
         this.orderRepository = orderRepository;
@@ -36,6 +39,7 @@ public class StockMovementService {
     public StockMovement create(StockMovement stockMovement){
         stockMovement.setCreationDate(new Date());
         completePendingOrders(stockMovement);
+        logger.info("Stock movement created on item: " + stockMovement.getItem().getId() + "with quantity:" + stockMovement.getQuantity());
         return stockMovementRepository.save(stockMovement);
     }
 

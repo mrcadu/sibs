@@ -43,12 +43,12 @@ public class OrderController {
         orderService.delete(id);
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/stocksToComplete/{id}")
     public StocksToCompleteOrderDTO getStocksToCompleteOrder(@PathVariable Long id){
         return orderService.getStockMovementsToCompleteOrder(id);
     }
 
-    @GetMapping
+    @GetMapping("/completeness")
     public OrdersCompletedDTO getOrdersCompleteness(){
         return orderService.getOrdersCompleteness();
     }

@@ -7,13 +7,15 @@ import aubay.sibs.model.dto.OrdersCompletedDTO;
 import aubay.sibs.model.dto.StocksToCompleteOrderDTO;
 import aubay.sibs.repository.OrderRepository;
 import aubay.sibs.repository.StockMovementRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+
+    private final Logger logger = LogManager.getLogger(OrderService.class);
     private final OrderRepository orderRepository;
 
     private final EmailService emailService;
@@ -61,6 +63,7 @@ public class OrderService {
 
     public void completeOrder(Order order){
         String orderEmail = "Order with item " + order.getItem().getName() + "is completed";
+        logger.info("completed order with id: " + order.getId());
         emailService.sendEmail(orderEmail, order.getUser());
     }
 
