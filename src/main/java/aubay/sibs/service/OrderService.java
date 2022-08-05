@@ -3,6 +3,7 @@ package aubay.sibs.service;
 import aubay.sibs.exception.ObjectNotFoundException;
 import aubay.sibs.model.Order;
 import aubay.sibs.repository.OrderRepository;
+import aubay.sibs.repository.StockMovementRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -12,8 +13,11 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    private final StockMovementRepository stockMovementRepository;
+
+    public OrderService(OrderRepository orderRepository, StockMovementRepository stockMovementRepository) {
         this.orderRepository = orderRepository;
+        this.stockMovementRepository = stockMovementRepository;
     }
 
     public Order getById(Long id) {
@@ -26,6 +30,10 @@ public class OrderService {
 
     public Order create(Order order){
         order.setCreationDate(new Date());
+        boolean canBeCompleted = checkIfOrderCanBeCompleted(order.getItem().getId(), order.getQuantity());
+        if(canBeCompleted){
+            completeOrder(order);
+        }
         return orderRepository.save(order);
     }
 
@@ -38,4 +46,12 @@ public class OrderService {
     public void delete(Long id){
         orderRepository.deleteById(id);
     }
+
+    public boolean checkIfOrderCanBeCompleted(Long itemId, int quantityOrdered){
+        int available = stockMovementRepository.getTotalMovementByItemId(itemId);
+        int completed = orderRepository.getTotalOrderedByItemId(itemId);
+        return  available - completed >= quantityOrdered;
+    }
+
+    public void completeOrder(Order order){}
 }
