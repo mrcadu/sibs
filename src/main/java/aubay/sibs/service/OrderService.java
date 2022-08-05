@@ -13,10 +13,13 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
 
+    private final EmailService emailService;
+
     private final StockMovementRepository stockMovementRepository;
 
-    public OrderService(OrderRepository orderRepository, StockMovementRepository stockMovementRepository) {
+    public OrderService(OrderRepository orderRepository, EmailService emailService, StockMovementRepository stockMovementRepository) {
         this.orderRepository = orderRepository;
+        this.emailService = emailService;
         this.stockMovementRepository = stockMovementRepository;
     }
 
@@ -53,5 +56,8 @@ public class OrderService {
         return  available - completed >= quantityOrdered;
     }
 
-    public void completeOrder(Order order){}
+    public void completeOrder(Order order){
+        String orderEmail = "Order with item " + order.getItem().getName() + "is completed";
+        emailService.sendEmail(orderEmail, order.getUser());
+    }
 }
