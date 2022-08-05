@@ -1,19 +1,28 @@
 package aubay.sibs.service;
 
 import aubay.sibs.exception.ObjectNotFoundException;
+import aubay.sibs.model.Order;
 import aubay.sibs.model.StockMovement;
+import aubay.sibs.repository.OrderRepository;
 import aubay.sibs.repository.StockMovementRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class StockMovementService {
     private final StockMovementRepository stockMovementRepository;
 
-    public StockMovementService(StockMovementRepository stockMovementRepository) {
+    private final OrderRepository orderRepository;
+
+    private final OrderService orderService;
+
+    public StockMovementService(StockMovementRepository stockMovementRepository, OrderRepository orderRepository, OrderService orderService) {
         this.stockMovementRepository = stockMovementRepository;
+        this.orderRepository = orderRepository;
+        this.orderService = orderService;
     }
 
     public StockMovement getById(Long id) {
@@ -26,6 +35,7 @@ public class StockMovementService {
 
     public StockMovement create(StockMovement stockMovement){
         stockMovement.setCreationDate(new Date());
+        completePendingOrders(stockMovement);
         return stockMovementRepository.save(stockMovement);
     }
 
@@ -37,5 +47,17 @@ public class StockMovementService {
 
     public void delete(Long id){
         stockMovementRepository.deleteById(id);
+    }
+
+    public void completePendingOrders(StockMovement stockMovement){
+        List<Order> orders = orderRepository.findAllByOrderByCreationDateAsc();
+        int existingStockMovement = stockMovementRepository.getTotalMovementByItemId(stockMovement.getItem().getId()) + stockMovement.getQuantity();
+        AtomicInteger orderCompletedQuantity = new AtomicInteger();
+        orders.forEach((order)->{
+            if(order.getQuantity() + orderCompletedQuantity.get() <= existingStockMovement){
+                orderService.completeOrder(order);
+                orderCompletedQuantity.addAndGet(order.getQuantity());
+            }
+        });
     }
 }
