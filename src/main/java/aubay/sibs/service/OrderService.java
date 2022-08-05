@@ -2,12 +2,14 @@ package aubay.sibs.service;
 
 import aubay.sibs.exception.ObjectNotFoundException;
 import aubay.sibs.model.Order;
+import aubay.sibs.model.StockMovement;
+import aubay.sibs.model.dto.StocksToCompleteOrderDTO;
 import aubay.sibs.repository.OrderRepository;
 import aubay.sibs.repository.StockMovementRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -59,5 +61,38 @@ public class OrderService {
     public void completeOrder(Order order){
         String orderEmail = "Order with item " + order.getItem().getName() + "is completed";
         emailService.sendEmail(orderEmail, order.getUser());
+    }
+
+    public StocksToCompleteOrderDTO getStockMovementsToCompleteOrder(Long orderId){
+        Order order = getById(orderId);
+        List<StockMovement> stockMovements = stockMovementRepository.findAllByOrderByCreationDateAsc();
+        List<Order> orders = orderRepository.findAllByOrderByCreationDateAsc();
+        Map<Order, List<StockMovement>> orderToStockMovement = new HashMap<>();
+        for (Order currentOrder : orders) {
+            List<StockMovement> stocksToCompleteOrder = new ArrayList<>();
+            Iterator<StockMovement> stockIterator = stockMovements.iterator();
+            while (currentOrder.getQuantity() != 0 && stockIterator.hasNext()) {
+                StockMovement currentStock = stockIterator.next();
+                StockMovement stockMovement = new StockMovement();
+                stockMovement.setQuantity(currentStock.getQuantity());
+                stockMovement.setId(currentStock.getId());
+                stockMovement.setCreationDate(currentStock.getCreationDate());
+                stockMovement.setItem(currentStock.getItem());
+                stocksToCompleteOrder.add(stockMovement);
+                if (currentOrder.getQuantity() < currentStock.getQuantity()) {
+                    currentStock.setQuantity(currentStock.getQuantity() - currentOrder.getQuantity());
+                    currentOrder.setQuantity(0);
+                } else if (currentOrder.getQuantity() > currentStock.getQuantity()) {
+                    currentOrder.setQuantity(currentOrder.getQuantity() - currentStock.getQuantity());
+                    stockIterator.remove();
+                } else {
+                    currentOrder.setQuantity(0);
+                }
+                orderToStockMovement.put(currentOrder, stocksToCompleteOrder);
+            }
+        }
+        StocksToCompleteOrderDTO stocksToCompleteOrderDTO = new StocksToCompleteOrderDTO();
+        stocksToCompleteOrderDTO.setStockMovementsToCompleteOrder(orderToStockMovement.get(order));
+        return stocksToCompleteOrderDTO;
     }
 }
