@@ -3,6 +3,7 @@ package aubay.sibs.service;
 import aubay.sibs.exception.ObjectNotFoundException;
 import aubay.sibs.model.Order;
 import aubay.sibs.model.StockMovement;
+import aubay.sibs.model.dto.OrdersCompletedDTO;
 import aubay.sibs.model.dto.StocksToCompleteOrderDTO;
 import aubay.sibs.repository.OrderRepository;
 import aubay.sibs.repository.StockMovementRepository;
@@ -94,5 +95,26 @@ public class OrderService {
         StocksToCompleteOrderDTO stocksToCompleteOrderDTO = new StocksToCompleteOrderDTO();
         stocksToCompleteOrderDTO.setStockMovementsToCompleteOrder(orderToStockMovement.get(order));
         return stocksToCompleteOrderDTO;
+    }
+
+    public OrdersCompletedDTO getOrdersCompleteness(){
+        List<StockMovement> stockMovements = stockMovementRepository.findAllByOrderByCreationDateAsc();
+        List<Order> orders = orderRepository.findAllByOrderByCreationDateAsc();
+        for (Order currentOrder : orders) {
+            Iterator<StockMovement> stockIterator = stockMovements.iterator();
+            while (currentOrder.getQuantity() != 0 && stockIterator.hasNext()) {
+                StockMovement currentStock = stockIterator.next();
+                if (currentOrder.getQuantity() < currentStock.getQuantity()) {
+                    currentOrder.setQuantity(0);
+                } else if (currentOrder.getQuantity() > currentStock.getQuantity()) {
+                    currentOrder.setQuantity(currentOrder.getQuantity() - currentStock.getQuantity());
+                } else {
+                    currentOrder.setQuantity(0);
+                }
+            }
+        }
+        OrdersCompletedDTO ordersCompletedDTO = new OrdersCompletedDTO();
+        ordersCompletedDTO.setOrdersWithCompleteness(orders);
+        return ordersCompletedDTO;
     }
 }

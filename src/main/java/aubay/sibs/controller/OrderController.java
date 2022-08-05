@@ -2,6 +2,7 @@ package aubay.sibs.controller;
 
 import aubay.sibs.model.Order;
 import aubay.sibs.model.StockMovement;
+import aubay.sibs.model.dto.OrdersCompletedDTO;
 import aubay.sibs.model.dto.StocksToCompleteOrderDTO;
 import aubay.sibs.service.OrderService;
 import org.springframework.web.bind.annotation.*;
@@ -45,5 +46,10 @@ public class OrderController {
     @GetMapping("{id}")
     public StocksToCompleteOrderDTO getStocksToCompleteOrder(@PathVariable Long id){
         return orderService.getStockMovementsToCompleteOrder(id);
+    }
+
+    @GetMapping
+    public OrdersCompletedDTO getOrdersCompleteness(){
+        return orderService.getOrdersCompleteness();
     }
 }
